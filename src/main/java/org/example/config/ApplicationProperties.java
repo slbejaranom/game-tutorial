@@ -5,17 +5,17 @@ import static java.lang.Integer.parseInt;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.Optional;
 import java.util.Properties;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+import lombok.Getter;
 import org.example.config.exception.IllegalPropertyException;
 
+@Getter
 public class ApplicationProperties {
 
-  private static final Logger logger = LogManager.getLogger(ApplicationProperties.class);
   private static ApplicationProperties applicationProperties;
-  private Properties properties;
-  private Display display;
+  private final Properties properties;
+  private WindowConfig windowConfig;
 
   protected ApplicationProperties() {
     try (InputStream input = new FileInputStream("src/main/resources/application.properties")) {
@@ -23,7 +23,7 @@ public class ApplicationProperties {
       properties.load(input);
       checkWindowProperties(properties);
     } catch (IOException ex) {
-      logger.error("Application properties file does not exist!");
+      throw new IllegalPropertyException("Properties file is not found!");
     }
   }
 
@@ -34,15 +34,12 @@ public class ApplicationProperties {
     return applicationProperties;
   }
 
-  public Properties getProperties() {
-    return this.properties;
-  }
-
   void checkWindowProperties(Properties properties) {
     try {
       int height = parseInt((String) properties.get("window.height"));
       int width = parseInt((String) properties.get("window.width"));
-      this.display = new Display(width, height);
+      String gameTitle = Optional.ofNullable((String) properties.get("window.title")).orElse("DEFAULT");
+      this.windowConfig = new WindowConfig(width, height, gameTitle);
     } catch (NumberFormatException ex) {
       throw new IllegalPropertyException("Window properties are not correctly set");
     }
